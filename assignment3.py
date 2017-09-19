@@ -26,7 +26,12 @@ def processData(contents):
     internet_explorer = 0
     firefox = 0
     safari = 0
+    hour_dict = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0, 8:0, 9:0, 10:0, 11:0,
+                 12:0, 13:0, 14:0, 15:0, 16:0, 17:0, 18:0, 19:0, 20:0, 21:0,
+                 22:0, 23:0}
     for row in contents:
+        # counter for total number of hits
+        total_hits += 1
         # searches for image hits
         if re.search('jpg|jpeg|gif|png', row[0], re.IGNORECASE):
             image += 1
@@ -39,24 +44,38 @@ def processData(contents):
             firefox += 1
         elif re.search('Safari', row[2]):
             safari += 1
-        #counter for total number of hits
-        total_hits += 1
+        # format datetime column to datetime object
+        row[1] = datetime.datetime.strptime(row[1], '%Y-%m-%d %H:%M:%S')
+        # count hits per hour
+        if row[1].hour in hour_dict:
+            hour_dict[row[1].hour] += 1
+
     image_dict = {'Total Hits':total_hits, 'Image Requests':image}
     browser_dict = {'Chrome':chrome, 'Internet Explorer':internet_explorer,
             'Firefox':firefox, 'Safari':safari}
-    return [image_dict, browser_dict]
+    return [image_dict, browser_dict, hour_dict]
 
 def displayResults(results):
     """Displays the usage information."""
 
     image_dict = results[0]
     browser_dict = results[1]
+    hour_dict = results[2]
     popular = max(browser_dict, key=browser_dict.get)
 
-    print 'Image results account for {}% of all requests'.format(
-        (100*image_dict.get('Image Requests')/image_dict.get('Total Hits'))
-    )
-    print '{} is the most popular browser of the day'.format(popular)
+    print '-' * 80
+    print 'Image results account for {}% of all requests ({} hits)'.format(
+        (100*image_dict.get('Image Requests')/image_dict.get('Total Hits')),
+        image_dict.get('Total Hits'))
+    print '-' * 80
+    for k,v in browser_dict.iteritems():
+        print '{} had {} hits'.format(k, v)
+    print '-' * 80
+    print '{} is the most popular browser of the day with {} hits'.format(
+        popular, browser_dict.get(popular))
+    print '-' * 80
+    for s in sorted(hour_dict, key=hour_dict.get, reverse=True):
+        print 'Hour {} had {} hits'.format(s, hour_dict[s])
 
 def main():
     """Main function."""
